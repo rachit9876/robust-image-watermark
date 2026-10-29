@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TrustMark Provenance{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <span class="logo-shield">🛡️</span>
+                <span class="brand-title">TrustMark Provenance</span>
+                <span class="badge local-badge">Local Offline</span>
+            </div>
+            <nav class="nav-links">
+                <a href="/" class="nav-btn {% if request.path == '/' %}active{% endif %}">Watermark Image</a>
+                <a href="/detector" class="nav-btn {% if request.path == '/detector' %}active{% endif %}">Detector</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="app-footer">
+        <p>Adobe TrustMark Universal Watermarking Framework • Runs 100% locally on device</p>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

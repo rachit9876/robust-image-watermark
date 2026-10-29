@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Watermark Image — TrustMark{% endblock %}
+
+{% block content %}
+<div class="card page-card">
+    <div class="card-header">
+        <h2>Watermark Image</h2>
+        <p class="subtitle">Assign a secure local provenance identity and imperceptibly encode it into your image with TrustMark ECC.</p>
+    </div>
+
+    <form id="watermark-form" class="form-container">
+        <div class="form-group">
+            <label for="username">Username / Creator Name <span class="required">*</span></label>
+            <input type="text" id="username" name="username" placeholder="e.g. alice, studio_creator, photographer_99" required autocomplete="off">
+        </div>
+
+        <div class="form-group">
+            <label>Cover Image <span class="required">*</span></label>
+            <div class="drop-zone" id="drop-zone">
+                <input type="file" id="image-input" name="image" accept="image/png, image/jpeg, image/webp" class="file-input" required>
+                <div class="drop-zone-prompt" id="drop-prompt">
+                    <span class="upload-icon">📁</span>
+                    <p><strong>Click to browse</strong> or drag & drop image here</p>
+                    <span class="hint">PNG, JPEG, WebP</span>
+                </div>
+                <div class="preview-container hidden" id="input-preview-box">
+                    <img id="input-preview" alt="Input Preview">
+                    <button type="button" class="btn-secondary btn-sm" id="btn-change-image">Change Image</button>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-primary" id="btn-submit">
+            <span class="btn-text">Generate Provenance & Embed Watermark</span>
+            <span class="spinner hidden" id="spinner"></span>
+        </button>
+    </form>
+
+    <div id="status-message" class="alert hidden"></div>
+
+    <div id="result-box" class="result-section hidden">
+        <hr class="divider">
+        <h3>Watermarking Successful</h3>
+        
+        <div class="meta-grid">
+            <div class="meta-item">
+                <span class="meta-label">Provenance ID</span>
+                <span class="meta-value badge-id" id="res-provenance-id">-</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Username</span>
+                <span class="meta-value" id="res-username">-</span>
+            </div>
+            <div class="meta-item full-width">
+                <span class="meta-label">Original Image SHA-256</span>
+                <span class="meta-value code-font" id="res-image-hash">-</span>
+            </div>
+        </div>
+
+        <div class="output-preview-wrapper">
+            <h4>Watermarked Output Preview</h4>
+            <div class="image-frame">
+                <img id="output-preview" alt="Watermarked Output">
+            </div>
+            <div class="action-buttons">
+                <a id="btn-download" class="btn-success" download="watermarked.png">
+                    <span>⬇️ Download Watermarked PNG</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/watermark.js"></script>
+{% endblock %}

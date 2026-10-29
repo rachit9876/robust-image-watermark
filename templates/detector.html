@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Watermark Detector — TrustMark{% endblock %}
+
+{% block content %}
+<div class="card page-card">
+    <div class="card-header">
+        <h2>Watermark Detector</h2>
+        <p class="subtitle">Extract embedded TrustMark payloads from images and verify provenance against the local SQLite registry.</p>
+    </div>
+
+    <form id="detect-form" class="form-container">
+        <div class="form-group">
+            <label>Upload Query Image <span class="required">*</span></label>
+            <div class="drop-zone" id="detect-drop-zone">
+                <input type="file" id="detect-image-input" name="image" accept="image/png, image/jpeg, image/webp" class="file-input" required>
+                <div class="drop-zone-prompt" id="detect-drop-prompt">
+                    <span class="upload-icon">🔍</span>
+                    <p><strong>Click to browse</strong> or drag & drop image to inspect</p>
+                    <span class="hint">Upload a potentially watermarked, cropped, or compressed image</span>
+                </div>
+                <div class="preview-container hidden" id="detect-preview-box">
+                    <img id="detect-preview" alt="Query Preview">
+                    <button type="button" class="btn-secondary btn-sm" id="btn-change-detect-image">Change Image</button>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-primary" id="btn-detect-submit">
+            <span class="btn-text">Decode & Verify Watermark</span>
+            <span class="spinner hidden" id="detect-spinner"></span>
+        </button>
+    </form>
+
+    <div id="detect-status-message" class="alert hidden"></div>
+
+    <div id="detect-result-box" class="result-section hidden">
+        <hr class="divider">
+        <h3>Detection & Verification Result</h3>
+
+        <div id="result-status-card" class="status-card">
+            <div class="status-header">
+                <span id="status-icon" class="status-icon">❓</span>
+                <div>
+                    <h4 id="status-title" class="status-title">Status</h4>
+                    <p id="status-desc" class="status-desc"></p>
+                </div>
+            </div>
+
+            <div id="verified-details" class="meta-grid hidden">
+                <div class="meta-item">
+                    <span class="meta-label">Attributed Username</span>
+                    <span class="meta-value user-highlight" id="det-username">-</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Decoded Provenance ID</span>
+                    <span class="meta-value badge-id" id="det-provenance-id">-</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Registration Date</span>
+                    <span class="meta-value" id="det-date">-</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">ECC Scheme</span>
+                    <span class="meta-value" id="det-ecc">-</span>
+                </div>
+                <div class="meta-item full-width">
+                    <span class="meta-label">Original Image SHA-256 Hash</span>
+                    <span class="meta-value code-font" id="det-hash">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/detector.js"></script>
+{% endblock %}
