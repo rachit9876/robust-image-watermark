@@ -40,11 +40,13 @@ def save_watermark_record(provenance_id: str, username: str, original_image_hash
 def find_watermark_record(provenance_id: str):
     conn = get_db_connection()
     cursor = conn.cursor()
+    # Check by provenance_id first, then fallback to direct username match
     cursor.execute("""
         SELECT provenance_id, username, original_image_hash, created_at, model_type, ecc_scheme
         FROM watermarks
-        WHERE provenance_id = ?
-    """, (provenance_id,))
+        WHERE provenance_id = ? OR username = ?
+        ORDER BY id DESC LIMIT 1
+    """, (provenance_id, provenance_id))
     row = cursor.fetchone()
     conn.close()
     if row:

@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrustMark Static Client Decoder — 100% In-Browser</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Official Adobe TrustMark Client Dependencies -->
+    <script src="/static/client_decoder/deps/ort.webgpu.min.js"></script>
+    <script src="/static/client_decoder/deps/bch_ecc.min.js"></script>
+    <script src="/static/client_decoder/tm_datalayer.js"></script>
+    <script src="/static/static_decoder.js"></script>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <span class="logo-shield">⚡</span>
+                <span class="brand-title">TrustMark Static Decoder</span>
+                <span class="badge" style="background:#1e1b4b; color:#a5b4fc;">Client-Side WebGPU / WASM</span>
+            </div>
+            <nav class="nav-links">
+                <a href="/" class="nav-btn">Watermark (Flask)</a>
+                <a href="/detector" class="nav-btn">Detector (Flask)</a>
+                <a href="/static/static_decoder.html" class="nav-btn active">Static Decoder</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <!-- Model Cache & Loader Section -->
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-header">
+                <h2>1. Model Engine & Cache Status</h2>
+                <p class="subtitle">Download and run the ONNX neural network directly inside your web browser. No image leaves your computer.</p>
+            </div>
+
+            <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                <button type="button" class="btn-primary" id="btn-load-model" style="width: auto;">
+                    <span id="load-btn-text">📥 Load Watermark Model</span>
+                    <span class="spinner hidden" id="model-spinner"></span>
+                </button>
+                <button type="button" class="btn-secondary" id="btn-check-cache">Check Cache</button>
+                <button type="button" class="btn-secondary" id="btn-clear-cache" style="color: #fca5a5;">Clear Cache</button>
+            </div>
+
+            <div id="cache-status-box" class="alert" style="margin-top: 1rem; background: #0b1329; border: 1px solid #1e293b;">
+                <span id="cache-icon">🔍</span>
+                <span id="cache-text">Checking browser cache...</span>
+            </div>
+
+            <!-- Download & Model Progress Bar -->
+            <div id="progress-wrapper" class="hidden" style="margin-top: 1rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.35rem;">
+                    <span id="progress-label" style="color: #94a3b8;">Loading model...</span>
+                    <span id="progress-percent" style="font-weight: 700; color: #38bdf8;">0%</span>
+                </div>
+                <div style="width: 100%; height: 10px; background: #0f172a; border-radius: 9999px; overflow: hidden; border: 1px solid #334155;">
+                    <div id="progress-bar-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); transition: width 0.2s ease;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Image Upload & Extraction Section -->
+        <div class="card">
+            <div class="card-header">
+                <h2>2. Upload Image to Decode</h2>
+                <p class="subtitle">Extract provenance watermarks encoded by your RTX 5050 or any TrustMark variant 'Q' encoder.</p>
+            </div>
+
+            <div class="drop-zone" id="static-drop-zone">
+                <input type="file" id="static-file-input" accept="image/png, image/jpeg, image/webp" class="file-input">
+                <div class="drop-zone-prompt" id="static-drop-prompt">
+                    <span class="upload-icon">🖼️</span>
+                    <p><strong>Click to browse</strong> or drag & drop image here</p>
+                    <p style="font-size: 0.85rem; color: #38bdf8; margin: 0.4rem 0;">or press <kbd style="background: #334155; padding: 2px 6px; border-radius: 4px; font-family: monospace;">Ctrl + V</kbd> to paste image from clipboard</p>
+                    <span class="hint">Test with images watermarked on Page 1 or any external TrustMark image</span>
+                </div>
+                <div class="preview-container hidden" id="static-preview-box">
+                    <img id="static-preview-img" alt="Uploaded Image">
+                    <button type="button" class="btn-secondary btn-sm" id="btn-change-static-img">Change Image</button>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap;">
+                <button type="button" class="btn-secondary" id="btn-paste-clipboard" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                    <span>📋 Paste from Clipboard</span>
+                </button>
+            </div>
+
+            <div style="margin-top: 1.5rem;">
+                <button type="button" class="btn-primary" id="btn-decode-static" disabled>
+                    <span id="decode-btn-text">⚡ Scan & Extract Watermark (In-Browser)</span>
+                    <span class="spinner hidden" id="decode-spinner"></span>
+                </button>
+            </div>
+
+            <div id="static-alert" class="alert hidden"></div>
+
+            <div id="static-result-box" class="result-section hidden">
+                <hr class="divider">
+                <h3>In-Browser Decoder Result</h3>
+
+                <div id="static-status-card" class="status-card">
+                    <div class="status-header">
+                        <span id="res-icon" class="status-icon">❓</span>
+                        <div>
+                            <h4 id="res-title" class="status-title">Status</h4>
+                            <p id="res-desc" class="status-desc"></p>
+                        </div>
+                    </div>
+
+                    <div id="static-details-grid" class="meta-grid hidden">
+                        <div class="meta-item">
+                            <span class="meta-label">Decoded Provenance ID</span>
+                            <span class="meta-value badge-id" id="res-prov-id">-</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">ECC Schema</span>
+                            <span class="meta-value" id="res-schema">-</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Bitflips Corrected</span>
+                            <span class="meta-value" id="res-bitflips">0</span>
+                        </div>
+                        <div class="meta-item full-width">
+                            <span class="meta-label">Raw Binary Payload (Bits)</span>
+                            <span class="meta-value code-font" id="res-raw-bits">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="app-footer">
+        <p>100% Static HTML / JavaScript • Runs entirely in your browser using ONNX Runtime WebGPU/WASM</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const btnLoadModel = document.getElementById('btn-load-model');
+            const loadBtnText = document.getElementById('load-btn-text');
+            const modelSpinner = document.getElementById('model-spinner');
+            const btnCheckCache = document.getElementById('btn-check-cache');
+            const btnClearCache = document.getElementById('btn-clear-cache');
+            const cacheStatusBox = document.getElementById('cache-status-box');
+            const cacheIcon = document.getElementById('cache-icon');
+            const cacheText = document.getElementById('cache-text');
+
+            const progressWrapper = document.getElementById('progress-wrapper');
+            const progressLabel = document.getElementById('progress-label');
+            const progressPercent = document.getElementById('progress-percent');
+            const progressBarFill = document.getElementById('progress-bar-fill');
+
+            const fileInput = document.getElementById('static-file-input');
+            const dropZone = document.getElementById('static-drop-zone');
+            const dropPrompt = document.getElementById('static-drop-prompt');
+            const previewBox = document.getElementById('static-preview-box');
+            const previewImg = document.getElementById('static-preview-img');
+            const btnChangeImg = document.getElementById('btn-change-static-img');
+            const btnPasteClipboard = document.getElementById('btn-paste-clipboard');
+
+            const btnDecode = document.getElementById('btn-decode-static');
+            const decodeBtnText = document.getElementById('decode-btn-text');
+            const decodeSpinner = document.getElementById('decode-spinner');
+
+            const alertBox = document.getElementById('static-alert');
+            const resultBox = document.getElementById('static-result-box');
+            const statusCard = document.getElementById('static-status-card');
+            const resIcon = document.getElementById('res-icon');
+            const resTitle = document.getElementById('res-title');
+            const resDesc = document.getElementById('res-desc');
+            const detailsGrid = document.getElementById('static-details-grid');
+            const resProvId = document.getElementById('res-prov-id');
+            const resSchema = document.getElementById('res-schema');
+            const resBitflips = document.getElementById('res-bitflips');
+            const resRawBits = document.getElementById('res-raw-bits');
+
+            let isModelLoaded = false;
+
+            // Initial cache inspection & AUTO-LOAD if cached
+            await checkAndAutoLoad();
+
+            async function checkAndAutoLoad() {
+                const info = await checkModelCacheStatus();
+                if (info.cached) {
+                    cacheIcon.textContent = '⚡';
+                    cacheText.textContent = 'Model is cached locally. Initializing neural session...';
+                    cacheStatusBox.style.borderColor = '#3b82f6';
+                    
+                    // Auto-load instantly from cache in the background
+                    try {
+                        await loadTrustMarkSessions();
+                        isModelLoaded = true;
+                        loadBtnText.textContent = '✅ Model Loaded & Active';
+                        btnLoadModel.disabled = true;
+                        cacheIcon.textContent = '💾';
+                        cacheText.textContent = 'Model active (loaded instantly from browser cache). Ready to scan!';
+                        cacheStatusBox.style.borderColor = '#10b981';
+
+                        if (previewImg.src && !previewBox.classList.contains('hidden')) {
+                            btnDecode.disabled = false;
+                            hideAlert();
+                        }
+                    } catch (e) {
+                        console.warn('Auto-load from cache error:', e);
+                        cacheIcon.textContent = '💾';
+                        cacheText.textContent = 'Model is cached. Click "Load Watermark Model" to activate.';
+                    }
+                } else {
+                    cacheIcon.textContent = '☁️';
+                    cacheText.textContent = 'Model not yet cached. Click "Load Watermark Model" to download ~47MB once.';
+                    cacheStatusBox.style.borderColor = '#334155';
+                }
+            }
+
+            async function updateCacheUI() {
+                const info = await checkModelCacheStatus();
+                if (info.cached) {
+                    cacheIcon.textContent = isModelLoaded ? '⚡' : '💾';
+                    cacheText.textContent = isModelLoaded 
+                        ? 'Model active and ready in memory.' 
+                        : 'Model is cached in browser storage. Click "Load Watermark Model" to activate in memory.';
+                    cacheStatusBox.style.borderColor = '#10b981';
+                } else {
+                    cacheIcon.textContent = '☁️';
+                    cacheText.textContent = 'Model not yet cached. Click "Load Watermark Model" to download once.';
+                    cacheStatusBox.style.borderColor = '#334155';
+                }
+            }
+
+            btnCheckCache.addEventListener('click', updateCacheUI);
+
+            btnClearCache.addEventListener('click', async () => {
+                await clearModelCache();
+                isModelLoaded = false;
+                btnLoadModel.disabled = false;
+                loadBtnText.textContent = '📥 Load Watermark Model';
+                btnDecode.disabled = true;
+                await updateCacheUI();
+                showAlert('Browser cache cleared successfully.', 'success');
+            });
+
+            btnLoadModel.addEventListener('click', async () => {
+                btnLoadModel.disabled = true;
+                modelSpinner.classList.remove('hidden');
+                loadBtnText.textContent = 'Loading ONNX Model...';
+
+                progressWrapper.classList.remove('hidden');
+                progressBarFill.style.width = '0%';
+                progressPercent.textContent = '0%';
+                progressLabel.textContent = 'Connecting to model CDN...';
+
+                try {
+                    const res = await loadTrustMarkSessions((info) => {
+                        if (typeof info === 'object') {
+                            if (info.message) cacheText.textContent = info.message;
+                            if (info.percent !== undefined) {
+                                progressBarFill.style.width = info.percent + '%';
+                                progressPercent.textContent = info.percent + '%';
+                                progressLabel.textContent = info.message;
+                            } else {
+                                progressLabel.textContent = info.message;
+                            }
+                        } else {
+                            cacheText.textContent = info;
+                        }
+                    });
+
+                    isModelLoaded = true;
+                    modelSpinner.classList.add('hidden');
+                    loadBtnText.textContent = '✅ Model Loaded & Active';
+                    cacheIcon.textContent = '⚡';
+                    cacheText.textContent = 'ONNX Decoder Q is ready in WebGPU/WASM. You can now decode images.';
+                    cacheStatusBox.style.borderColor = '#10b981';
+
+                    progressBarFill.style.width = '100%';
+                    progressPercent.textContent = '100%';
+                    progressLabel.textContent = 'Model loaded & ready in browser!';
+
+                    if (previewImg.src && !previewBox.classList.contains('hidden')) {
+                        btnDecode.disabled = false;
+                    }
+                } catch (err) {
+                    modelSpinner.classList.add('hidden');
+                    btnLoadModel.disabled = false;
+                    loadBtnText.textContent = 'Retry Loading Model';
+                    progressLabel.textContent = 'Failed to load model';
+                    showAlert('Failed to load model: ' + err.message, 'error');
+                }
+            });
+
+            // File input handling
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    loadFile(e.target.files[0]);
+                }
+            });
+
+            // Clipboard Paste: 1. Click button
+            btnPasteClipboard.addEventListener('click', async () => {
+                try {
+                    const clipboardItems = await navigator.clipboard.read();
+                    let imageFound = false;
+
+                    for (const item of clipboardItems) {
+                        for (const type of item.types) {
+                            if (type.startsWith('image/')) {
+                                const blob = await item.getType(type);
+                                loadFile(blob);
+                                imageFound = true;
+                                break;
+                            }
+                        }
+                        if (imageFound) break;
+                    }
+
+                    if (!imageFound) {
+                        showAlert('No image found in clipboard. Copy an image or screenshot first!', 'error');
+                    }
+                } catch (err) {
+                    showAlert('Clipboard access denied or not supported by browser. You can press Ctrl + V instead!', 'error');
+                }
+            });
+
+            // Clipboard Paste: 2. Global Ctrl + V shortcut
+            window.addEventListener('paste', (e) => {
+                const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
+                if (!items) return;
+
+                for (const item of items) {
+                    if (item.type.startsWith('image/')) {
+                        const file = item.getAsFile();
+                        if (file) {
+                            loadFile(file);
+                            showAlert('Image pasted from clipboard!', 'success');
+                            setTimeout(hideAlert, 2000);
+                            break;
+                        }
+                    }
+                }
+            });
+
+            btnChangeImg.addEventListener('click', () => {
+                fileInput.value = '';
+                previewBox.classList.add('hidden');
+                dropPrompt.classList.remove('hidden');
+                btnDecode.disabled = true;
+                resultBox.classList.add('hidden');
+            });
+
+            async function loadFile(file) {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    previewImg.src = e.target.result;
+                    dropPrompt.classList.add('hidden');
+                    previewBox.classList.remove('hidden');
+                    resultBox.classList.add('hidden');
+
+                    if (isModelLoaded) {
+                        btnDecode.disabled = false;
+                        hideAlert();
+                        return;
+                    }
+
+                    // Check if model is already in browser cache
+                    const cacheInfo = await checkModelCacheStatus();
+                    if (cacheInfo.cached) {
+                        // Automatically load from cache without requiring user to click the button
+                        hideAlert();
+                        loadBtnText.textContent = 'Activating Cached Model...';
+                        btnLoadModel.disabled = true;
+                        try {
+                            await loadTrustMarkSessions();
+                            isModelLoaded = true;
+                            loadBtnText.textContent = '✅ Model Loaded & Active';
+                            cacheIcon.textContent = '💾';
+                            cacheText.textContent = 'Model loaded instantly from cache!';
+                            cacheStatusBox.style.borderColor = '#10b981';
+                            btnDecode.disabled = false;
+                        } catch (err) {
+                            showAlert('Cached model load error: ' + err.message, 'error');
+                            btnLoadModel.disabled = false;
+                        }
+                    } else {
+                        btnDecode.disabled = true;
+                        showAlert('ℹ️ Image loaded! Please click the "📥 Load Watermark Model" button above first so your browser can download and cache it.', 'error');
+                        btnLoadModel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        btnLoadModel.style.boxShadow = '0 0 20px #3b82f6';
+                        setTimeout(() => { btnLoadModel.style.boxShadow = ''; }, 2500);
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+
+            // Decode button handler
+            btnDecode.addEventListener('click', async () => {
+                if (!isModelLoaded) {
+                    showAlert('⚠️ Cannot decode yet: Please click "📥 Load Watermark Model" above first!', 'error');
+                    btnLoadModel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    btnLoadModel.style.boxShadow = '0 0 20px #ef4444';
+                    setTimeout(() => { btnLoadModel.style.boxShadow = ''; }, 2500);
+                    return;
+                }
+
+                btnDecode.disabled = true;
+                decodeSpinner.classList.remove('hidden');
+                decodeBtnText.textContent = 'Scanning Pixels with WebGPU / WASM...';
+                hideAlert();
+                resultBox.classList.add('hidden');
+
+                try {
+                    const t0 = performance.now();
+                    const result = await decodeImageWatermark(previewImg);
+                    const dt = ((performance.now() - t0) / 1000).toFixed(2);
+
+                    renderResult(result, dt);
+                } catch (err) {
+                    showAlert('Decoding error: ' + err.message, 'error');
+                } finally {
+                    btnDecode.disabled = false;
+                    decodeSpinner.classList.add('hidden');
+                    decodeBtnText.textContent = '⚡ Scan & Extract Watermark (In-Browser)';
+                }
+            });
+
+            function renderResult(res, timeSec) {
+                resultBox.classList.remove('hidden');
+                statusCard.className = 'status-card';
+                detailsGrid.classList.add('hidden');
+
+                if (res.valid && res.recovered_id) {
+                    statusCard.classList.add('verified');
+                    resIcon.textContent = '✅';
+                    resTitle.textContent = `Watermark Recovered: ${res.recovered_id}`;
+                    resTitle.style.color = '#34d399';
+                    resDesc.textContent = `Extracted 100% in-browser in ${timeSec} seconds. Matches TrustMark variant Q schema.`;
+
+                    resProvId.textContent = res.recovered_id;
+                    resSchema.textContent = res.schema;
+                    resBitflips.textContent = `${res.bitflips} bit(s) corrected`;
+                    resRawBits.textContent = res.raw_bits;
+                    detailsGrid.classList.remove('hidden');
+                } else {
+                    statusCard.classList.add('inconclusive');
+                    resIcon.textContent = '❌';
+                    resTitle.textContent = 'No Watermark Found';
+                    resTitle.style.color = '#f87171';
+                    resDesc.textContent = `Scanned in ${timeSec} seconds. No valid TrustMark watermark payload was detected in this image.`;
+                }
+
+                resultBox.scrollIntoView({ behavior: 'smooth' });
+            }
+
+            function showAlert(msg, type) {
+                alertBox.textContent = msg;
+                alertBox.className = 'alert ' + (type === 'error' ? 'alert-error' : 'alert-success');
+                alertBox.classList.remove('hidden');
+            }
+
+            function hideAlert() {
+                alertBox.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -80,6 +80,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const embedMode = document.querySelector('input[name="embed_mode"]:checked')?.value || 'id';
+
+        if (embedMode === 'direct_username' && username.length > 8) {
+            showError(`Username "${username}" is ${username.length} characters long. Direct username embedding is limited to at most 8 characters to fit TrustMark's BCH error-correction envelope.`);
+            return;
+        }
+
         if (!imageInput.files || imageInput.files.length === 0) {
             showError('Please select an image file to watermark.');
             return;
@@ -87,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const formData = new FormData();
         formData.append('username', username);
+        formData.append('embed_mode', embedMode);
         formData.append('image', imageInput.files[0]);
 
         // Loading state

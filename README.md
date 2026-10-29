@@ -46,16 +46,17 @@ robust-image-watermark/
 
 ## Quick Start
 
-1. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+### Easy Start (Windows)
+Double-click **`start.bat`**. It will automatically:
+- Set up UTF-8 and GPU acceleration
+- Start the local Flask web server on `http://127.0.0.1:5000`
+- Automatically launch your default browser to the web UI
 
-2. Run the application:
-   ```bash
-   python app.py
-   ```
-   Open your browser to [http://127.0.0.1:5000](http://127.0.0.1:5000).
+### Manual Start
+```bash
+python app.py
+```
+Open your browser to [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
 3. Run automated tests:
    ```bash

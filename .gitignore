@@ -53,6 +53,9 @@ provenance.db
 *.webp
 !static/**
 
+# Ensure large ONNX model files are ignored even inside static/
+static/**/*.onnx
+
 # IDE / Editor artifacts
 .vscode/
 .idea/

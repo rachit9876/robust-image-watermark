@@ -12,7 +12,27 @@
     <form id="watermark-form" class="form-container">
         <div class="form-group">
             <label for="username">Username / Creator Name <span class="required">*</span></label>
-            <input type="text" id="username" name="username" placeholder="e.g. alice, studio_creator, photographer_99" required autocomplete="off">
+            <input type="text" id="username" name="username" placeholder="e.g. alice, studio, photographer_99" required autocomplete="off">
+        </div>
+
+        <div class="form-group" style="background: rgba(15, 23, 42, 0.4); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+            <label style="margin-bottom: 0.6rem; display: block; font-weight: 600;">Payload Embedding Strategy</label>
+            <div style="display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.9rem;">
+                <label style="display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer; font-weight: normal;">
+                    <input type="radio" name="embed_mode" value="id" checked style="margin-top: 0.2rem;">
+                    <div>
+                        <strong>Unique Provenance ID (Recommended)</strong>
+                        <div style="color: var(--text-secondary); font-size: 0.8rem;">Generates a secure random 8-character ID (e.g. <code>D6NDHI90</code>) mapped to your username in the database. Supports any username length.</div>
+                    </div>
+                </label>
+                <label style="display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer; font-weight: normal;">
+                    <input type="radio" name="embed_mode" value="direct_username" id="radio-direct-username" style="margin-top: 0.2rem;">
+                    <div>
+                        <strong>Direct Username Embedding</strong>
+                        <div style="color: var(--text-secondary); font-size: 0.8rem;">Embeds the creator name directly into the image pixels without indirection. <span id="char-limit-hint" style="color: #38bdf8;">(Requires &le; 8 characters due to TrustMark ECC limits)</span></div>
+                    </div>
+                </label>
+            </div>
         </div>
 
         <div class="form-group">

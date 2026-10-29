@@ -26,12 +26,16 @@ def page_detector():
 @app.route('/api/watermark', methods=['POST'])
 def api_watermark():
     username = request.form.get('username', '').strip()
+    embed_mode = request.form.get('embed_mode', 'id').strip()  # 'id' or 'direct_username'
     file = request.files.get('image')
 
     if not username:
         return jsonify({'error': 'Username is required'}), 400
     if not file or file.filename == '':
         return jsonify({'error': 'Image file is required'}), 400
+
+    if embed_mode == 'direct_username' and len(username) > 8:
+        return jsonify({'error': f'Username "{username}" is {len(username)} characters. Direct username embedding is limited to at most 8 characters to fit TrustMark error-correction payload limits.'}), 400
 
     try:
         raw_bytes = file.read()
@@ -40,8 +44,11 @@ def api_watermark():
         # Open and validate image
         pil_img = Image.open(io.BytesIO(raw_bytes))
         
-        # Generate unique provenance ID (8 uppercase chars)
-        provenance_id = generate_provenance_id(length=8)
+        # Determine payload string based on embed_mode
+        if embed_mode == 'direct_username':
+            provenance_id = username  # Direct username embedding (up to 8 chars)
+        else:
+            provenance_id = generate_provenance_id(length=8)  # Default random ID
         
         # Embed watermark using TrustMark with BCH_5 ECC
         watermarked_pil = embed_watermark(pil_img, provenance_id, model_type='Q', wm_strength=1.0)
@@ -65,6 +72,7 @@ def api_watermark():
             'success': True,
             'provenance_id': provenance_id,
             'username': username,
+            'embed_mode': embed_mode,
             'image_hash': image_hash,
             'image_data': f'data:image/png;base64,{base64_data}',
             'filename': f'watermarked_{provenance_id}.png'
