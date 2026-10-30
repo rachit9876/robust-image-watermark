@@ -2,6 +2,16 @@
 
 A 100% local, offline image watermarking and provenance authentication system built with Python, Flask, SQLite, and Adobe's open-source **TrustMark** universal watermarking framework.
 
+<div align="left">
+
+| | <img src="https://dr-fast-upload.pages.dev/public/8e68413286fd.webp" height="200" /> | |
+| :---: | :---: | :---: |
+
+</div>
+
+
+
+
 ## Architecture & Modular Design
 
 ```
