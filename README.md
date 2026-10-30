@@ -4,7 +4,7 @@ A 100% local, offline image watermarking and provenance authentication system bu
 
 <div align="left">
 
-| | <img src="https://dr-fast-upload.pages.dev/public/8e68413286fd.webp" height="200" /> | |
+| | <img src="https://dr-fast-upload.pages.dev/public/8e68413286fd.webp" height="600" /> | |
 | :---: | :---: | :---: |
 
 </div>
